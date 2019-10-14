@@ -8,6 +8,7 @@ import System.Random
 -- Players
 p1 = 'X'
 p2 = 'O'
+column_numbers = ['1', '2', '3', '4', '5', '6', '7']
 
 -- play isOver player state runs the main loop of the game
 play :: Bool -> Bool -> Player -> State -> Int -> IO ()
@@ -75,13 +76,13 @@ createAiMove :: Int -> Int -> IO Int
 createAiMove level lastMove =
     do
         if level == 0 then do
-            x <- atRandIndex ['1', '2', '3', '4', '5', '6', '7']
+            x <- atRandIndex column_numbers
             if isValidGameInput x
                 then
                     return (digitToInt x)
                 else do createAiMove level lastMove
         else do
-            x <- atRandIndex [intToDigit lastMove, intToDigit (lastMove - 1), intToDigit (lastMove + 1)]
+            x <- atRandIndex [intToDigit lastMove, intToDigit (lastMove + 1), intToDigit (lastMove + 2)]
             if isValidGameInput x
                 then
                     return (digitToInt x)
@@ -105,7 +106,7 @@ parseInput =
 
 -- isValidGameInput c checks if c is a valid game input
 isValidGameInput :: Char -> Bool
-isValidGameInput c = c `elem` ['1', '2', '3', '4', '5', '6', '7']
+isValidGameInput c = c `elem` column_numbers
 
 -- printBoard b prints board b to console
 printBoard :: Show a => [[a]] -> IO ()
@@ -126,8 +127,9 @@ main =
         putStrLn "Connect 4"
         putStrLn "Press c for single player, any other key for multi player"
         c <- getChar
-        if (c `elem` ['c'])
+        if (c == 'c')
             then do
+                putStrLn "\n" -- extra empty line for sexiness
                 putStrLn "Computer is player 'X'. You are Player 0."
                 putStrLn "Choose either 0 or 1 for difficulty"
                 l <- getChar
@@ -136,7 +138,8 @@ main =
                         putStrLn "\n" -- extra empty line for sexiness
                         play True False p1 initState (digitToInt l)
                     else do
-                        putStrLn "Not a valid input. Redirecting to main."
+                        putStrLn "\n" -- extra empty line for sexiness
+                        putStrLn "Not a valid level input. Redirecting to main."
                         main
         else do
             putStrLn "Player 1 is 'X' and Player 2 is 'O'"
