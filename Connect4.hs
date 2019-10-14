@@ -1,7 +1,6 @@
 module Connect4 where
 
-data State = State Board ColPos
-            deriving (Ord, Eq, Show)
+data State = State Board ColPos Col deriving (Ord, Eq, Show)
 
 data Result = EndOfGame Player State
             | ContinueGame State
@@ -22,32 +21,32 @@ type ColPos = [Int]
 
 -- connect4 plays a turn of the game and updates the game baord
 connect4 :: Game
-connect4 player move (State board colPos)
-    | isColFull move colPos = RetryTurn player (State board colPos)
-    | isTie newColPos = EndOfGame 'T' (State newBoard newColPos)
-    | isWin player (move, colPos!!move) newBoard = EndOfGame player (State newBoard newColPos)
-    | otherwise = ContinueGame (State newBoard newColPos)
+connect4 player move (State board colPos lastMove)
+    | isColFull move colPos = RetryTurn player (State board colPos lastMove)
+    | isTie newColPos = EndOfGame 'T' (State newBoard newColPos lastMove)
+    | isWin player (move, colPos!!move) newBoard = EndOfGame player (State newBoard newColPos lastMove)
+    | otherwise = ContinueGame (State newBoard newColPos lastMove)
     where
-        (State newBoard newColPos) = updateBoard player move (State board colPos)
+        (State newBoard newColPos lastMove) = updateBoard player move (State board colPos lastMove)
 
 -- initState returns the initial State of the game
 initState :: State
-initState = State [['*', '*', '*', '*', '*', '*', '*'], 
+initState = State [['*', '*', '*', '*', '*', '*', '*'],
                    ['*', '*', '*', '*', '*', '*', '*'],
                    ['*', '*', '*', '*', '*', '*', '*'],
                    ['*', '*', '*', '*', '*', '*', '*'],
                    ['*', '*', '*', '*', '*', '*', '*'],
-                   ['*', '*', '*', '*', '*', '*', '*']] [5,5,5,5,5,5,5]
+                   ['*', '*', '*', '*', '*', '*', '*']] [5,5,5,5,5,5,5] 0
 
--- updateBoard player x state returns the new updated State of the game 
+-- updateBoard player x state returns the new updated State of the game
 updateBoard :: Player -> Col -> State -> State
-updateBoard player x (State board colPos) =
+updateBoard player x (State board colPos lastMove) =
     let y = colPos!!x
         rowToUpdate = board!!y
         updatedColPos = updateList x (y-1) colPos
         updatedRow = updateList x player rowToUpdate
         updatedBoard = updateList y updatedRow board
-    in (State updatedBoard updatedColPos)
+    in (State updatedBoard updatedColPos x)
 
 isColFull :: Col -> ColPos -> Bool
 isColFull move colPos = colPos!!move < 0
@@ -57,7 +56,7 @@ isTie [] = True
 isTie (h:r) = h < 0 && isTie r
 
 isWin :: Player -> BoardPos -> Board -> Bool
-isWin player (x, y) board = 
+isWin player (x, y) board =
     (isWinVertically player (x, top) (x, bottom) board 0) ||
     (isWinHorizontally player (left, y) (right, y) board 0) ||
     (isWinTopLeftToBottomRight player (tlx, tly) (brx, bry) board 0) ||
