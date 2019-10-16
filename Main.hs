@@ -9,6 +9,7 @@ import System.Random
 p1 = 'X'
 p2 = 'O'
 column_numbers = ['1', '2', '3', '4', '5', '6', '7']
+column_int     = [0, 1, 2, 3, 4, 5, 6]
 
 -- play isOver player state runs the main loop of the game
 play :: Bool -> Bool -> Player -> State -> Int -> IO ()
@@ -30,18 +31,28 @@ playTurn isAi player (State board colPos lastMove) level =
     do
         if (isAi && player == p1)
             then do
-                putStrLn "\n" -- extra empty line for sexiness
-                input <- createAiMove level lastMove
-                let x = purifierFunction input
                 putStrLn "Computer's turn."
-                return (connect4 player x (State board colPos lastMove))
+                putStrLn "\n" -- extra empty line for sexiness
+                if (level == 0 || level == 1) then do
+                    input <- createAiMove level lastMove
+                    let x = purifierFunction input
+                    return (connect4 player x (State board colPos lastMove))
+                else do
+                    op_move <- moveChecker column_int player (State board colPos lastMove)
+                    if (op_move == 0) then do
+                        input2 <- createAiMove level lastMove
+                        let x1 = purifierFunction input2
+                        return (connect4 player x1 (State board colPos lastMove))
+                    else do
+                        let checker = purifierFunction op_move
+                        return (connect4 player checker (State board colPos lastMove))
             else do
                 printBoard board
                 putStrLn "\n" -- extra empty line for sexiness
                 putStrLn ("Player " ++ [player] ++ "\'s turn. Pick a column from 1-7.")
                 input <- parseInput
-                let x = input - 1
-                return (connect4 player x (State board colPos lastMove))
+                let z = input - 1
+                return (connect4 player z (State board colPos lastMove))
 
 atRandIndex :: [a] -> IO a
 atRandIndex l = do
@@ -88,8 +99,34 @@ createAiMove level lastMove =
                     return (digitToInt x)
                 else do createAiMove 0 lastMove
 
+moveChecker :: [Int] -> Player -> State -> IO Int
+moveChecker [] _ (State board colPos lastMove) =
+    do
+        return 0
+moveChecker (h:t) player (State board colPos lastMove) =
+    do
+        -- check CPU win
+        if (colPos!!h >= 0) then do
+            let (State newBoard newColPos lastMove) = updateBoard p1 h (State board colPos lastMove)
+            if isWin player (h, ((newColPos!!h) + 1)) newBoard
+                then do
+                    return (h + 1)
+                else do
+                    -- check player win
+                    let (State newBoard newColPos lastMove) = updateBoard p2 h (State board colPos lastMove)
+                    if isWin (if player == p1 then p2 else p1) (h, ((newColPos!!h) + 1)) newBoard
+                        then do
+                            return (h+1)
+                        else do
+                            moveChecker t player (State board colPos lastMove)
+            else do
+                moveChecker t player (State board colPos lastMove)
+
 purifierFunction :: Int -> Int
 purifierFunction x = x - 1
+
+zeroPurifier :: Int -> Int
+zeroPurifier x = x + 0
 
 -- parseInput parses the user input for the game
 parseInput :: IO Int
@@ -118,7 +155,7 @@ printBoard b =
 
 -- isValidLevel l checks to see if it is a valid input
 isValidLevel :: Char -> Bool
-isValidLevel c = c `elem` ['1', '0']
+isValidLevel c = c `elem` ['1', '0', '2']
 
 -- main method to start game
 main :: IO ()
@@ -131,7 +168,7 @@ main =
             then do
                 putStrLn "\n" -- extra empty line for sexiness
                 putStrLn "Computer is player 'X'. You are Player 0."
-                putStrLn "Choose either 0 or 1 for difficulty"
+                putStrLn "Choose either 0, 1, or 2 for difficulty"
                 l <- getChar
                 if isValidLevel l
                     then do
