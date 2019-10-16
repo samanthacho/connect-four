@@ -39,7 +39,7 @@ playTurn isAi player (State board colPos lastMove) level =
                     return (connect4 player x (State board colPos lastMove))
                 else do
                     op_move <- moveChecker column_int player (State board colPos lastMove)
-                    if (op_move == 0) then do
+                    if (op_move == 8) then do
                         input2 <- createAiMove level lastMove
                         let x1 = purifierFunction input2
                         return (connect4 player x1 (State board colPos lastMove))
@@ -102,7 +102,7 @@ createAiMove level lastMove =
 moveChecker :: [Int] -> Player -> State -> IO Int
 moveChecker [] _ (State board colPos lastMove) =
     do
-        return 0
+        return 8
 moveChecker (h:t) player (State board colPos lastMove) =
     do
         -- check CPU win
